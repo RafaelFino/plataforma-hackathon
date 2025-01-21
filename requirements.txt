@@ -1,3 +1,4 @@
+requests
 db-sqlite3
 fastapi
 uvicorn
