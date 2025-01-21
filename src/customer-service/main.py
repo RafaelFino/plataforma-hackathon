@@ -37,7 +37,18 @@ def makeResponse(msg: str, args: dict = {}):
 
     return ret
 
-@app.route('/customer', methods=['POST'])
+def check_id(id):
+    try:
+        tmp = int(id)
+        if tmp > 0:
+            return True
+        
+    except ValueError:
+        logging.error(f"[CUSTOMER-API] Invalid ID: {id}")
+        
+    return False
+
+@app.post('/customer')
 def add_customer():
     data = Request.get_json()
     customer = CustomerDomain(data['name'], data['email'])
@@ -45,8 +56,11 @@ def add_customer():
 
     return makeResponse("Customer added", {"customer_id": customer_id}), HTTPStatus.CREATED
 
-@app.route('/customer/<int:id>', methods=['PUT'])
+@app.put('/customer/{id}')
 def update_customer(id):
+    if check_id(id) == False:
+        return makeResponse("Invalid ID"), HTTPStatus.BAD_REQUEST
+
     data = Request.get_json()
     customer = CustomerDomain(data['name'], data['email'])
     customer.set_id(id)
@@ -57,8 +71,11 @@ def update_customer(id):
     else:
         return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
-@app.route('/customer/<int:id>', methods=['DELETE'])
+@app.delete('/customer/{id}')
 def delete_customer(id):
+    if check_id(id) == False:
+        return makeResponse("Invalid ID"), HTTPStatus.BAD_REQUEST
+
     deleted = service.delete(id)
 
     if deleted:
@@ -66,8 +83,11 @@ def delete_customer(id):
     else:
         return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
-@app.route('/customer/<int:id>', methods=['GET'])
+@app.get('/customer/{id}')
 def get_customer(id):
+    if check_id(id) == False:
+        return makeResponse("Invalid ID"), HTTPStatus.BAD_REQUEST
+        
     customer = service.get(id)
 
     if customer:
@@ -75,15 +95,12 @@ def get_customer(id):
     else:
         return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
-@app.route('/customer', methods=['GET'])
+@app.get('/customer')
 def get_all_customers():
     customers = service.get_all()
     customers_json = [customer.to_json() for customer in customers]
 
     return makeResponse("Customers found", {"customers": customers_json}), HTTPStatus.OK
-
-if __name__ == '__main__':
-    app.run(port=5000, debug=True)
 
 print("Done!")
 
