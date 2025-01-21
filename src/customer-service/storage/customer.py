@@ -4,12 +4,13 @@ from domain.customer import CustomerDomain
 
 # Escreva os comandos SQL para as funções add, get, get_all, update e delete
 # Escreva as mensagens de log para todos os comandos que alteram o estado do domínio
+logger = logging.getLogger('uvicorn.error')
 
 class CustomerStorage:
-    def __init__(self):
+    def __init__(self):        
         self.conn = sqlite3.connect("customer-database.sqlite", check_same_thread=False)
         self.__create()
-        logging.debug("[CUSTOMER-STORAGE] Storage initialized")
+        logger.debug("[CUSTOMER-STORAGE] Storage initialized")
 
     def __create(self):
         if self.conn is None:

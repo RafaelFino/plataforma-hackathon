@@ -11,20 +11,12 @@ from service.product import ProductService
 # Insira mensagens de log para todas as funções
 #   - Para funções que alteram o estado do domínio, inclua mensagens de log antes e depois da alteração (logs de info!)
 #   - Para funções que não alteram o estado do domínio, inclua mensagens de log apenas no início da função (logs de debug!)
-# Insira controler de Try/Except para todas as funções e logs nos casos de Exception usando logging.error
+# Insira controler de Try/Except para todas as funções e logs nos casos de Exception usando logger.error
 # Em caso de erro, envie um retorno HTTP adequado
-
-print("Starting...")
 
 app = FastAPI()
 service = ProductService()
-logging.basicConfig(
-    level=logging.DEBUG, 
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    filename="logs/product-service.log",
-    filemode='a',
-    datefmt='%H:%M:%S',
-)
+logger = logging.getLogger('uvicorn.error')
 
 def makeResponse(response: Response, msg: str, args: dict = {}, status: HTTPStatus = HTTPStatus.OK ) -> dict:
     ret = {
@@ -46,7 +38,7 @@ def check_id(id):
             return True
         
     except ValueError:
-        logging.error(f"[PRODUCT-API] Invalid ID: {id}")
+        logger.error(f"[PRODUCT-API] Invalid ID: {id}")
         
     return False
 
@@ -109,5 +101,3 @@ def get_all_products(response: Response):
         ret.append(product.to_dict())
 
     return makeResponse(response, "Products found", {"products": ret}, status=HTTPStatus.OK)
-
-print("Done!")

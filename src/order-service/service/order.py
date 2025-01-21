@@ -4,6 +4,7 @@ from storage.order import OrderStorage
 from client.customer import CustomerClient
 from client.product import ProductClient
 
+
 # Crie uma instância para o Storage
 # Inclua mensagens de log para todas as funções
 #   - Para funções que alteram o estado do domínio, inclua mensagens de log antes e depois da alteração (logs de info!)

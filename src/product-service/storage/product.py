@@ -4,12 +4,13 @@ from domain.product import ProductDomain
 
 # Escreva os comandos SQL para as funções add, get, get_all, update e delete
 # Escreva as mensagens de log para todos os comandos que alteram o estado do domínio
+logger = logging.getLogger('uvicorn.error')
 
 class ProductStorage:
     def __init__(self):
         self.conn = sqlite3.connect("product-database.sqlite", check_same_thread=False)
         self.__create()
-        logging.debug("[PRODUCT-STORAGE] Storage initialized")
+        logger.debug("[PRODUCT-STORAGE] Storage initialized")
 
     def __create(self):
         if self.conn is None:

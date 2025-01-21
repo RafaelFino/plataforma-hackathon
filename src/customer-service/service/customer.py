@@ -7,11 +7,13 @@ from storage.customer import CustomerStorage
 #   - Para funções que alteram o estado do domínio, inclua mensagens de log antes e depois da alteração (logs de info!)
 #   - Para funções que não alteram o estado do domínio, inclua mensagens de log apenas no início da função (logs de debug!)
 # Faça todas as chamadas para a storage
+# Insira controler de Try/Except para todas as funções e logs nos casos de Exception usando logging.error
+logger = logging.getLogger('uvicorn.error')
 
 class CustomerService:
     def __init__(self):
         self.storage = CustomerStorage()
-        logging.info("[CUSTOMER-SERVICE] Service initialized")
+        logger.info("[CUSTOMER-SERVICE] Service initialized")
 
     def add(self, customer: CustomerDomain) -> int:
         # TODO
