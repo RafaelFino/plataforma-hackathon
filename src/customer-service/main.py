@@ -1,10 +1,9 @@
 #!/bin/env python3
 
 import logging
-from flask import Flask, request, jsonify
 from http import HTTPStatus
 from datetime import datetime
-import json 
+from fastapi import FastAPI, Request
 
 from domain.customer import CustomerDomain
 from service.customer import CustomerService
@@ -13,10 +12,11 @@ from service.customer import CustomerService
 #   - Para funções que alteram o estado do domínio, inclua mensagens de log antes e depois da alteração (logs de info!)
 #   - Para funções que não alteram o estado do domínio, inclua mensagens de log apenas no início da função (logs de debug!)
 # Insira controler de Try/Except para todas as funções e logs nos casos de Exception usando logging.error
+# Em caso de erro, envie um retorno HTTP adequado
 
 print("Starting...")
 
-app = Flask(__name__)
+app = FastAPI()
 service = CustomerService()
 logging.basicConfig(
     level=logging.DEBUG, 
@@ -39,48 +39,48 @@ def makeResponse(msg: str, args: dict = {}):
 
 @app.route('/customer', methods=['POST'])
 def add_customer():
-    data = request.get_json()
+    data = Request.get_json()
     customer = CustomerDomain(data['name'], data['email'])
     customer_id = service.add(customer)
 
-    return jsonify(makeResponse("Customer added", {"customer_id": customer_id})), HTTPStatus.CREATED
+    return makeResponse("Customer added", {"customer_id": customer_id}), HTTPStatus.CREATED
 
 @app.route('/customer/<int:id>', methods=['PUT'])
 def update_customer(id):
-    data = request.get_json()
+    data = Request.get_json()
     customer = CustomerDomain(data['name'], data['email'])
     customer.set_id(id)
     updated = service.update(customer)
 
     if updated:
-        return jsonify(makeResponse("Customer updated")), HTTPStatus.OK
+        return makeResponse("Customer updated"), HTTPStatus.OK
     else:
-        return jsonify(makeResponse("Customer not found")), HTTPStatus.NO_CONTENT
+        return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
 @app.route('/customer/<int:id>', methods=['DELETE'])
 def delete_customer(id):
     deleted = service.delete(id)
 
     if deleted:
-        return jsonify(makeResponse("Customer deleted")), HTTPStatus.OK
+        return makeResponse("Customer deleted"), HTTPStatus.OK
     else:
-        return jsonify(makeResponse("Customer not found")), HTTPStatus.NO_CONTENT
+        return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
 @app.route('/customer/<int:id>', methods=['GET'])
 def get_customer(id):
     customer = service.get(id)
 
     if customer:
-        return jsonify(makeResponse("Customer found", customer.to_json())), HTTPStatus.OK
+        return makeResponse("Customer found", customer.to_json()), HTTPStatus.OK
     else:
-        return jsonify(makeResponse("Customer not found")), HTTPStatus.NO_CONTENT
+        return makeResponse("Customer not found"), HTTPStatus.NO_CONTENT
     
 @app.route('/customer', methods=['GET'])
 def get_all_customers():
     customers = service.get_all()
     customers_json = [customer.to_json() for customer in customers]
 
-    return jsonify(makeResponse("Customers found", {"customers": customers_json})), HTTPStatus.OK
+    return makeResponse("Customers found", {"customers": customers_json}), HTTPStatus.OK
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
