@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-from domain.order import OrderDomain, OrderItemDomain, ProductDomain, CustomerDomain
+from domain.order import OrderDomain, OrderItemDomain
 
 # Escreva os comandos SQL para as funções add, get, get_all, update e delete
 # Escreva as mensagens de log para todos os comandos que alteram o estado do domínio
@@ -22,14 +22,15 @@ class OrderStorage:
                 customer_id INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-                  
+        ''')          
+        c.execute('''
             CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id INTEGER NOT NULL REFERENCES orders(id),
                 product_id INTEGER NOT NULL,
                 price REAL NOT NULL,
                 quantity INTEGER NOT NULL
-            )
+            );
         ''')
         self.conn.commit()
 

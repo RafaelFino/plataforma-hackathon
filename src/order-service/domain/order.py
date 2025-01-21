@@ -1,5 +1,5 @@
-from domain.customer import CustomerDomain
-from domain.product import ProductDomain
+from domain.customer import CustomerInfoDomain
+from domain.product import ProductInfoDomain
 from datetime import datetime
 
 class OrderDomain:
@@ -14,6 +14,9 @@ class OrderDomain:
     def set_created_at(self, created_at: datetime):
         self.created_at = created_at
 
+    def add_customer_info(self, customer_info: CustomerInfoDomain):
+        self.customer_info = customer_info
+
     def add_item(self, product_id, price: float, quantity: float):
         self.items.append(OrderItemDomain(product_id=product_id, price=price, quantity=quantity))
 
@@ -21,6 +24,7 @@ class OrderDomain:
         return {
             'order_id': self.order_id,
             'customer_id': self.customer_id,
+            'customer_info': self.customer_info.to_dict(),
             'items': [item.to_dict() for item in self.items],
             'created_at': self.created_at,
             'total': self.total()
@@ -36,14 +40,18 @@ class OrderItemDomain:
         self.price = price
         self.quantity = quantity
 
+    def add_product_info(self, product_info: ProductInfoDomain):
+        self.product_info = product_info
+
     def to_dict(self):
         return {
             'item_id': self.item_id,
             'product_id': self.product_id,
+            'product_info': self.product_info.to_dict(),
             'price': self.price,
             'quantity': self.quantity,
             'total': self.total()
         }
     
     def total(self):
-        return self.product.price * self.quantity
+        return self.price * self.quantity
