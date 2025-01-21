@@ -10,7 +10,6 @@ from domain.order import OrderDomain
 from client.product import ProductClient
 from client.customer import CustomerClient
 
-
 # Insira mensagens de log para todas as funções
 #   - Para funções que alteram o estado do domínio, inclua mensagens de log antes e depois da alteração (logs de info!)
 #   - Para funções que não alteram o estado do domínio, inclua mensagens de log apenas no início da função (logs de debug!)
