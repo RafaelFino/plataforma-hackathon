@@ -3,11 +3,13 @@ import requests
 import http
 from domain.customer import CustomerInfoDomain
 
+logger = logging.getLogger('uvicorn.debug')
+
 class CustomerClient:
     def __init__(self, customer_service_url: str = "http://localhost:8001"):
         self.customer_service_url = customer_service_url
         self.cache = {}
-        logging.info("[CUSTOMER-CLIENT] Client initialized")
+        logger.info("[CUSTOMER-CLIENT] Client initialized")
 
     def load(self, customer_id: int) -> CustomerInfoDomain:        
         try:
@@ -17,7 +19,8 @@ class CustomerClient:
             logging.info(f"[CUSTOMER-CLIENT] Loading customer {customer_id} from {self.customer_service_url}")
             r = requests.get(f'{self.customer_service_url}/customer/{customer_id}')
             if r.status_code == http.HTTPStatus.OK:
-                ret = CustomerInfoDomain(json_data=r.text)
+                data = r.json()
+                ret = CustomerInfoDomain(data['customer']['name'], data['customer']['email'])
                 self.cache[customer_id] = ret
                 return ret
             else:

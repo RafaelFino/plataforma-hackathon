@@ -16,7 +16,7 @@ from service.product import ProductService
 
 app = FastAPI()
 service = ProductService()
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger('uvicorn.debug')
 
 def makeResponse(response: Response, msg: str, args: dict = {}, status: HTTPStatus = HTTPStatus.OK ) -> dict:
     ret = {
@@ -47,21 +47,22 @@ def root(response: Response):
     return makeResponse(response, "Product API", status=HTTPStatus.OK)
 
 @app.post('/product')
-def add_product(response: Response):
-    data = Request.get_json()
+async def add_product(request: Request, response: Response):
+    data = await request.json()
     product = ProductDomain(data['name'], data['price'])
     product_id = service.add(product)
 
     return makeResponse(response, "Product added", {"product_id": product_id}, status=HTTPStatus.CREATED)
 
 @app.put('/product/{id}')
-def update_product(id, response: Response):
+async def update_product(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse(response, "Invalid ID", status=HTTPStatus.BAD_REQUEST)
 
-    data = Request.get_json()
+    data = await request.json()
     product = ProductDomain(data['name'], data['price'])
     product.set_id(id)
+    logger.debug(f"[PRODUCT-API] Update {product}")
     updated = service.update(product)
 
     if updated:
@@ -70,7 +71,7 @@ def update_product(id, response: Response):
         return makeResponse(response, "Product not found", status=HTTPStatus.NO_CONTENT)
     
 @app.delete('/product/{id}')
-def delete_product(id, response: Response):
+async def delete_product(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse(response, "Invalid ID", status=HTTPStatus.BAD_REQUEST)
 
@@ -82,22 +83,22 @@ def delete_product(id, response: Response):
         return makeResponse(response, "Product not found", status=HTTPStatus.NO_CONTENT)
     
 @app.get('/product/{id}')
-def get_product(id, response: Response):
+async def get_product(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse(response, "Invalid ID", status=HTTPStatus.BAD_REQUEST)
 
     product = service.get(id)
 
     if product is not None:
-        return makeResponse(response, "Product found", {"product": product.to_dict()}, status=HTTPStatus.OK)
+        return makeResponse(response, "Product found", {"product": product.to_json()}, status=HTTPStatus.OK)
     else:
         return makeResponse(response, "Product not found", status=HTTPStatus.NO_CONTENT)
     
 @app.get('/product')
-def get_all_products(response: Response):
+async def get_all_products(request: Request, response: Response):
     products = service.get_all()
     ret = []
     for product in products:
-        ret.append(product.to_dict())
+        ret.append(product.to_json())
 
     return makeResponse(response, "Products found", {"products": ret}, status=HTTPStatus.OK)

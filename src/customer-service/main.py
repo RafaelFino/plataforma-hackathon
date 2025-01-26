@@ -17,7 +17,8 @@ from service.customer import CustomerService
 app = FastAPI()
 service = CustomerService()
 
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger('uvicorn.debug')
+logger.setLevel("DEBUG")
 
 def makeResponse(response: Response, msg: str, args: dict = {}, status: HTTPStatus = HTTPStatus.OK ) -> dict:
     ret = {
@@ -48,19 +49,20 @@ def root(response: Response):
     return makeResponse(response, "Customer API", status=HTTPStatus.OK)
 
 @app.post('/customer')
-def add_customer(response: Response):
-    data = Request.get_json()
+async def add_customer(request: Request, response: Response):
+    logger.info(f"[CUSTOMER-API] Request: {request}")
+    data = await request.json()
     customer = CustomerDomain(data['name'], data['email'])
     customer_id = service.add(customer)
 
     return makeResponse(response, "Customer added", {"customer_id": customer_id }, status=HTTPStatus.CREATED)
 
 @app.put('/customer/{id}')
-def update_customer(id, response: Response):
+async def update_customer(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse("Invalid ID"), HTTPStatus.BAD_REQUEST
 
-    data = Request.get_json()
+    data = await request.json()
     customer = CustomerDomain(data['name'], data['email'])
     customer.set_id(id)
     updated = service.update(customer)
@@ -71,7 +73,7 @@ def update_customer(id, response: Response):
         return makeResponse(response, "Customer not found", status=HTTPStatus.NO_CONTENT)
     
 @app.delete('/customer/{id}')
-def delete_customer(id, response: Response):
+async def delete_customer(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse(response, "Invalid ID", status=HTTPStatus.BAD_REQUEST)
 
@@ -83,7 +85,7 @@ def delete_customer(id, response: Response):
         return makeResponse(response, "Customer not found", status=HTTPStatus.NO_CONTENT)
     
 @app.get('/customer/{id}')
-def get_customer(id, response: Response):
+async def get_customer(id, request: Request, response: Response):
     if check_id(id) == False:
         return makeResponse(response, "Invalid ID", status=HTTPStatus.BAD_REQUEST)
         
@@ -95,7 +97,7 @@ def get_customer(id, response: Response):
         return makeResponse(response, "Customer not found", status=HTTPStatus.NO_CONTENT)
     
 @app.get('/customer')
-def get_all_customers(response: Response):
+async def get_all_customers(request: Request, response: Response):
     customers = service.get_all()
     customers_json = [customer.to_json() for customer in customers]
 

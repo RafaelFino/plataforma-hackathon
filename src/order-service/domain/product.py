@@ -1,10 +1,9 @@
 import json
 
 class ProductInfoDomain:
-    def __init__(self, json_data: str): 
-        data = json.loads(json_data)
-        self.name = data['name']
-        self.price = data['price']
+    def __init__(self, name: str, price: float): 
+        self.name = name
+        self.price = price
 
     def to_dict(self):
         return {

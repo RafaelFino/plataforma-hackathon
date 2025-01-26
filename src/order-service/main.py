@@ -17,10 +17,11 @@ from client.customer import CustomerClient
 # Em caso de erro, envie um retorno HTTP adequado
 
 app = FastAPI()
-customer_client = CustomerClient(customer_service_url="http://localhost:8001")
-product_client = ProductClient(product_service_url="http://localhost:8002")
+customer_client = CustomerClient(customer_service_url="http://0.0.0.0:8001")
+product_client = ProductClient(product_service_url="http://0.0.0.0:8002")
 order_service = OrderService(customer_client, product_client)
-logger = logging.getLogger('uvicorn.error')
+logger = logging.getLogger('uvicorn.debug')
+logger.setLevel("DEBUG")
 
 def makeResponse(response: Response, msg: str, args: dict = {}, status: HTTPStatus = HTTPStatus.OK ) -> dict:
     ret = {
@@ -32,6 +33,8 @@ def makeResponse(response: Response, msg: str, args: dict = {}, status: HTTPStat
         ret[key] = args[key]
 
     response.status_code = status
+
+    logger.debug(f"[ORDER-API] {status} - Response: {ret}")
 
     return ret
 
@@ -51,8 +54,8 @@ def root(response: Response):
     return makeResponse(response, "Order API", status=HTTPStatus.OK)
 
 @app.post('/order')
-def add_customer(response: Response):
-    data = Request.get_json()
+async def create_order(request: Request, response: Response):
+    data = await request.json()
     customer_id = data['customer_id']
 
     if check_id(customer_id) == False:
@@ -63,11 +66,11 @@ def add_customer(response: Response):
     return makeResponse(response, "Order created", {"order_id": order_id }, status=HTTPStatus.CREATED)
 
 @app.patch('/order/{order_id}')
-def add_order_item(order_id, product_id, quantity, response: Response):
+async def add_order_item(order_id, request: Request, response: Response):
     if check_id(order_id) == False:
         return makeResponse("Invalid ORDER ID"), HTTPStatus.BAD_REQUEST
 
-    data = Request.get_json()
+    data = await request.json()
     product_id = data['product_id']
 
     if check_id(product_id) == False:
@@ -79,16 +82,16 @@ def add_order_item(order_id, product_id, quantity, response: Response):
     if product_info is None:
         return makeResponse(response, "Product not found", {"product_id": product_id}, status=HTTPStatus.NOT_FOUND)
     
-    item_id = order_service.add_product(order_id, product_id, quantity)
+    item_id = order_service.add_product(order_id, product_id, product_info.price, quantity)
 
     if item_id is not None:
-        return makeResponse(response, "Product added to order", { "product_info": product_info, "item_id": item_id }, status=HTTPStatus.CREATED)
+        return makeResponse(response, "Product added to order", { "product_info": product_info.to_dict(), "item_id": item_id }, status=HTTPStatus.CREATED)
     else:
         return makeResponse(response, "Product not added to order", status=HTTPStatus.INTERNAL_SERVER_ERROR)
     
     
 @app.delete('/order/{order_id}/{item_id}')
-def delete_customer(order_id, item_id, response: Response):
+async def delete_order_item(order_id, item_id, request: Request, response: Response):
     if check_id(order_id) == False:
         return makeResponse("Invalid ORDER ID"), HTTPStatus.BAD_REQUEST
 
@@ -103,7 +106,7 @@ def delete_customer(order_id, item_id, response: Response):
         return makeResponse(response, "Product not removed from order", status=HTTPStatus.INTERNAL_SERVER_ERROR)
     
 @app.get('/order/{order_id}')
-def get_customer(order_id, response: Response):
+async def get_order(order_id, request: Request, response: Response):
     if check_id(order_id) == False:
         return makeResponse(response, "Invalid ORDER ID", status=HTTPStatus.BAD_REQUEST)
         
@@ -115,7 +118,7 @@ def get_customer(order_id, response: Response):
         return makeResponse(response, "Order not found", status=HTTPStatus.NO_CONTENT)
     
 @app.get('/customer/{customer_id}')
-def get_all_customers(customer_id, response: Response):
+async def get_all_order_from_customers(customer_id, request: Request, response: Response):
     if check_id(customer_id) == False:
         return makeResponse(response, "Invalid CUSTOMER ID", status=HTTPStatus.BAD_REQUEST)
     
@@ -127,6 +130,19 @@ def get_all_customers(customer_id, response: Response):
     orders = order_service.get_all_from_customer(customer_id)
 
     if orders is not None:
-        return makeResponse(response, "Orders found", {"orders": orders, "customer_info": customer_info}, status=HTTPStatus.OK)
+        return makeResponse(response, "Orders found", {"orders": orders, "customer_info": customer_info.to_dict()}, status=HTTPStatus.OK)
     else:
         return makeResponse(response, "Orders not found", status=HTTPStatus.NO_CONTENT)
+    
+@app.post('/customer/cache')
+async def reset_cache(response: Response):
+    logger.info(f"[ORDER-API] Cleaning cache")
+    
+    try:
+        product_client.reset_cache()
+        customer_client.reset_cache()
+    except Exception as e:
+        logger.error(f"[ORDER-API] Fail to clean cache: {e}")
+        return makeResponse(response, "Fail to clean cache", status=HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    return makeResponse(response, "Cache reset", status=HTTPStatus.OK)

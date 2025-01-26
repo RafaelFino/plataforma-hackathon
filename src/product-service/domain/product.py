@@ -1,8 +1,11 @@
 class ProductDomain:
-    def __init__(self, product_id: int, name: str, price: float):
-        self.product_id = product_id
+    def __init__(self, name: str, price: float):
+        self.product_id = None
         self.name = name
         self.price = price
+
+    def set_id(self, id: int):
+        self.product_id = id
 
     def __str__(self):
         return f'Product ID: {self.product_id}, Name: {self.name}, Price: {self.price}'

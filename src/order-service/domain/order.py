@@ -6,19 +6,19 @@ class OrderDomain:
     def __init__(self, customer_id: int):
         self.customer_id = customer_id
         self.items = []
-        self.created_at = datetime.now()
+        self.created_at = datetime.now().strftime('%Y%m%d %H%M%S')
 
     def set_id(self, order_id: int):
         self.order_id = order_id
 
-    def set_created_at(self, created_at: datetime):
+    def set_created_at(self, created_at: str):
         self.created_at = created_at
 
     def add_customer_info(self, customer_info: CustomerInfoDomain):
         self.customer_info = customer_info
 
-    def add_item(self, product_id, price: float, quantity: float):
-        self.items.append(OrderItemDomain(product_id=product_id, price=price, quantity=quantity))
+    def add_item(self, item_id, product_id, price: float, quantity: float):
+        self.items.append(OrderItemDomain(item_id=item_id, product_id=product_id, price=price, quantity=quantity))
 
     def to_dict(self):
         return {
